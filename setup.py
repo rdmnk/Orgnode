@@ -1,8 +1,8 @@
 from distutils.core import setup
 
 setup(
-    name='orgnode',
-    packages=['orgnode'],
+    name='Orgnode',
+    packages=['Orgnode'],
     version='0.1.0',
     description='The org-mode parser for python',
     author='Charles Cave',
