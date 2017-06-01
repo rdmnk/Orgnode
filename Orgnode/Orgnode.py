@@ -35,6 +35,14 @@ constructing data structures of these classes.
 
 import re, sys
 import datetime
+import json
+
+
+def toJSON(nodelist):
+    return json.dumps(nodelist, default=lambda o:
+                     o.isoformat() if isinstance (o, datetime.date) else o.__dict__,
+                     sort_keys=True, indent=4)
+
 
 def makelist(filename):
    """
@@ -296,7 +304,7 @@ class Orgnode(object):
         """
         return self.deadline
 
-    def __repr__(self):
+    def __repr__(self):          # 
         """
         Print the level, heading text and tag of a node and the body
         text as used to construct the node.
@@ -320,6 +328,7 @@ class Orgnode(object):
         n = n + "\n" + self.body
         
         return n
+
 
 
     
