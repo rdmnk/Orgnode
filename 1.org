@@ -1,0 +1,48 @@
+* Test 0							  :test_tag:
+  :PROPERTIES: 
+  :somenumber: 123
+  :END:      
+  SCHEDULED: <2017-05-27 Сб>
+  
+  Test 0  body
+
+** Test 00
+   
+   test 00 body
+   
+*** Test 000
+    
+    test 000 body
+    
+**** Test 0000
+     
+     test 0000 body
+     
+***** Test 00000
+      
+      test 00000 body
+
+
+* Test 1							  :another_tag:
+  SCHEDULED: <2017-06-01 Чт>
+  
+  Test 1 body
+ 
+** Test 11
+
+   test 11
+   
+*** Test 111
+
+    test 111
+
+**** Test 1111
+     SCHEDULED: <2017-06-03 Сб>
+ 
+     test 1111
+
+***** Test 11111
+      :PROPERTIES:
+      :END:
+      
+      test 11111

@@ -44,6 +44,137 @@ def toJSON(nodelist):
                      sort_keys=True, indent=4)
 
 
+def maketree(filename):
+   """
+   Read an org-mode file and return a tree of Orgnode objects
+   created from this file.
+   """
+   ctr = 0
+   
+
+   try:
+      f = open(filename, 'r')
+   except IOError:
+      print "Unable to open file [%s] " % filename
+      print "Program terminating."
+      sys.exit(1)
+
+   todos         = dict()  # populated from #+SEQ_TODO line
+   todos['TODO'] = ''   # default values
+   todos['DONE'] = ''   # default values
+   level         = 0
+   heading       = ""
+   bodytext      = ""
+   tag1          = ""      # The first tag enclosed in ::
+   alltags       = []      # list of all tags in headline
+   sched_date    = ''
+   deadline_date = ''
+   nodetree      = []
+   propdict      = dict() 
+   parent        = None
+
+   parent_list = [] # consists of (parent node_ctr)
+   node_ctr = 0
+   
+   for line in f:
+       ctr += 1     
+       hdng = re.search('^(\*+)\s(.*?)\s*$', line)
+       if hdng:
+          if heading:  # we are processing a heading line
+             thisNode = Orgnode(level, heading, bodytext, tag1, alltags, parent)
+             if sched_date:
+                thisNode.setScheduled(sched_date)
+                sched_date = ""
+             if deadline_date:
+                thisNode.setDeadline(deadline_date)
+                deadline_date = ''
+             thisNode.setProperties(propdict)
+             nodetree.append( thisNode )
+             propdict = dict()
+          level = hdng.group(1)
+
+          parent_list = parent_list[:len(level) - 1]
+          parent_list.append(node_ctr)
+
+          print 'tttt', node_ctr, parent_list
+
+          if len(parent_list) > 1:
+              parent = parent_list[-2]
+              nodetree[parent_list[-2]].childs.append(node_ctr)
+          else:
+              parent = None
+
+          heading =  hdng.group(2)
+          bodytext = ""
+          tag1 = ""
+          alltags = []       # list of all tags in headline
+          tagsrch = re.search('(.*?)\s*:(.*?):(.*?)$',heading)
+          if tagsrch:
+              heading = tagsrch.group(1)
+              tag1 = tagsrch.group(2)
+              alltags.append(tag1)
+              tag2 = tagsrch.group(3)
+              if tag2:
+                 for t in tag2.split(':'):
+                    if t != '': alltags.append(t)
+
+          node_ctr = node_ctr + 1;
+
+       else:      # we are processing a non-heading line
+           if line[:10] == '#+SEQ_TODO':
+              kwlist = re.findall('([A-Z]+)\(', line)
+              for kw in kwlist: todos[kw] = ""
+
+           if line[:1] != '#':
+               bodytext = bodytext + line
+
+           if re.search(':PROPERTIES:', line): continue
+           if re.search(':END:', line): continue
+           prop_srch = re.search('^\s*:(.*?):\s*(.*?)\s*$', line)
+           if prop_srch:
+              propdict[prop_srch.group(1)] = prop_srch.group(2)
+              continue
+           sd_re = re.search('SCHEDULED:\s+<([0-9]+)\-([0-9]+)\-([0-9]+)', line)
+           if sd_re:
+              sched_date = datetime.date(int(sd_re.group(1)),
+                                         int(sd_re.group(2)),
+                                         int(sd_re.group(3)) )
+           dd_re = re.search('DEADLINE:\s*<(\d+)\-(\d+)\-(\d+)', line)
+           if dd_re:
+              deadline_date = datetime.date(int(dd_re.group(1)),
+                                            int(dd_re.group(2)),
+                                            int(dd_re.group(3)) )
+
+   # write out last node              
+   thisNode = Orgnode(level, heading, bodytext, tag1, alltags, parent)
+   thisNode.setProperties(propdict)   
+   if sched_date:
+      thisNode.setScheduled(sched_date)
+   if deadline_date:
+      thisNode.setDeadline(deadline_date)
+   nodetree.append( thisNode )
+              
+   # using the list of TODO keywords found in the file
+   # process the headings searching for TODO keywords
+   for n in nodetree:
+       h = n.Heading()
+       todoSrch = re.search('([A-Z]+)\s(.*?)$', h)
+       if todoSrch:
+           if todos.has_key( todoSrch.group(1) ):
+               n.setHeading( todoSrch.group(2) )
+               n.setTodo ( todoSrch.group(1) )
+       prtysrch = re.search('^\[\#(A|B|C)\] (.*?)$', n.Heading())
+       if prtysrch:
+          n.setPriority(prtysrch.group(1))
+          n.setHeading(prtysrch.group(2))
+                            
+          
+
+   return nodetree
+
+
+
+
 def makelist(filename):
    """
    Read an org-mode file and return a list of Orgnode objects
@@ -76,7 +207,7 @@ def makelist(filename):
        hdng = re.search('^(\*+)\s(.*?)\s*$', line)
        if hdng:
           if heading:  # we are processing a heading line
-             thisNode = Orgnode(level, heading, bodytext, tag1, alltags)
+             thisNode = Orgnode(level, heading, bodytext, tag1, alltags, None)
              if sched_date:
                 thisNode.setScheduled(sched_date)
                 sched_date = ""
@@ -126,7 +257,7 @@ def makelist(filename):
                                             int(dd_re.group(3)) )
 
    # write out last node              
-   thisNode = Orgnode(level, heading, bodytext, tag1, alltags)
+   thisNode = Orgnode(level, heading, bodytext, tag1, alltags, None)
    thisNode.setProperties(propdict)   
    if sched_date:
       thisNode.setScheduled(sched_date)
@@ -156,7 +287,7 @@ class Orgnode(object):
     Orgnode class represents a headline, tags and text associated
     with the headline.
     """
-    def __init__(self, level, headline, body, tag, alltags):
+    def __init__(self, level, headline, body, tag, alltags, parent=None):
         """
         Create an Orgnode object given the parameters of level (as the
         raw asterisks), headline text (including the TODO tag), and
@@ -175,6 +306,8 @@ class Orgnode(object):
         self.properties = dict()
         for t in alltags:
            self.tags[t] = ''
+        self.childs = []
+        self.parent = parent
 
         # Look for priority in headline and transfer to prty field
         
