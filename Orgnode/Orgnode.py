@@ -33,7 +33,7 @@ headline and associated text from an org-mode file, and routines for
 constructing data structures of these classes.
 """
 
-import re, sys
+import re, sys, os.path
 import datetime
 import json
 
@@ -72,16 +72,21 @@ def maketree(filename):
    nodetree      = []
    propdict      = dict() 
    parent        = None
+   lsib          = None
 
-   parent_list = [] # consists of (parent node_ctr)
-   node_ctr = 0
+   parent_list = [0,] # consists of (parent node_ctr)
+   node_ctr = 1
+
+   filebase = os.path.splitext(os.path.basename(filename))[0]
+   thisNode = Orgnode('', filebase, "", "", "", None, None)
+   nodetree.append(thisNode)
    
    for line in f:
        ctr += 1     
        hdng = re.search('^(\*+)\s(.*?)\s*$', line)
        if hdng:
           if heading:  # we are processing a heading line
-             thisNode = Orgnode(level, heading, bodytext, tag1, alltags, parent)
+             thisNode = Orgnode(level, heading, bodytext, tag1, alltags, parent, lsib)
              if sched_date:
                 thisNode.setScheduled(sched_date)
                 sched_date = ""
@@ -93,16 +98,23 @@ def maketree(filename):
              propdict = dict()
           level = hdng.group(1)
 
-          parent_list = parent_list[:len(level) - 1]
+          try:
+              lsib = parent_list[len(level)]
+              nodetree[parent_list[len(level)]].rsib = node_ctr
+          except IndexError: 
+              lsib = None
+              pass
+          
+          parent_list = parent_list[:len(level)]
           parent_list.append(node_ctr)
-
-          print 'tttt', node_ctr, parent_list
 
           if len(parent_list) > 1:
               parent = parent_list[-2]
+
               nodetree[parent_list[-2]].childs.append(node_ctr)
           else:
               parent = None
+
 
           heading =  hdng.group(2)
           bodytext = ""
@@ -146,7 +158,7 @@ def maketree(filename):
                                             int(dd_re.group(3)) )
 
    # write out last node              
-   thisNode = Orgnode(level, heading, bodytext, tag1, alltags, parent)
+   thisNode = Orgnode(level, heading, bodytext, tag1, alltags, parent, lsib)
    thisNode.setProperties(propdict)   
    if sched_date:
       thisNode.setScheduled(sched_date)
@@ -207,7 +219,7 @@ def makelist(filename):
        hdng = re.search('^(\*+)\s(.*?)\s*$', line)
        if hdng:
           if heading:  # we are processing a heading line
-             thisNode = Orgnode(level, heading, bodytext, tag1, alltags, None)
+             thisNode = Orgnode(level, heading, bodytext, tag1, alltags)
              if sched_date:
                 thisNode.setScheduled(sched_date)
                 sched_date = ""
@@ -257,7 +269,7 @@ def makelist(filename):
                                             int(dd_re.group(3)) )
 
    # write out last node              
-   thisNode = Orgnode(level, heading, bodytext, tag1, alltags, None)
+   thisNode = Orgnode(level, heading, bodytext, tag1, alltags)
    thisNode.setProperties(propdict)   
    if sched_date:
       thisNode.setScheduled(sched_date)
@@ -287,7 +299,7 @@ class Orgnode(object):
     Orgnode class represents a headline, tags and text associated
     with the headline.
     """
-    def __init__(self, level, headline, body, tag, alltags, parent=None):
+    def __init__(self, level, headline, body, tag, alltags, parent=None, lsib=None):
         """
         Create an Orgnode object given the parameters of level (as the
         raw asterisks), headline text (including the TODO tag), and
@@ -308,6 +320,8 @@ class Orgnode(object):
            self.tags[t] = ''
         self.childs = []
         self.parent = parent
+        self.lsib = lsib
+        self.rsib = None
 
         # Look for priority in headline and transfer to prty field
         
@@ -463,5 +477,50 @@ class Orgnode(object):
         return n
 
 
+def jointrees (name, args):
 
+    parent_list = [0, ]
+    nodetree = list()
+    node_ctr = 1
+
+    thisNode = Orgnode('', name, "", "", "", None, None)
+    nodetree.append(thisNode)
     
+    for nt in args:
+
+        # for item #0 
+        nt[0].level = nt[0].level + 1
+        try:
+            nt[0].lsib = parent_list[nt[0].level]
+            nodetree[parent_list(nt[0].level].rsib = node_ctr
+        except IndexError:
+            lsib = None
+            pass
+
+        parent_list = parent_list[:nt[0].level]
+        parent_list.append(node_ctr)
+
+        if len(parent_list) > 1:
+            nt[0].parent = parent_list[-2]
+            nodetree[parent_list[-2]].childs.append(node_ctr)
+        else:
+            parent = None
+
+        nodetree.append(nt[0])
+
+        # for other items 
+        for item in nt[1:]:
+            item.level = item.level + 1
+            if item.parent:
+                item.parent = node_ctr + item.parent
+            if item.lsib:
+                item.slib = node_ctr + item.lsib
+            if item.rsib:
+                item.rsib = node_ctr + item.rsib
+
+            nodetree.append(item)
+
+        node_ctr = node_ctr + len(nt);
+
+    return nodetree
+            
