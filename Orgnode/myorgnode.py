@@ -492,7 +492,7 @@ def jointrees (name, args):
         nt[0].level = nt[0].level + 1
         try:
             nt[0].lsib = parent_list[nt[0].level]
-            nodetree[parent_list(nt[0].level].rsib = node_ctr
+            nodetree[parent_list[nt[0].level]].rsib = node_ctr
         except IndexError:
             lsib = None
             pass
