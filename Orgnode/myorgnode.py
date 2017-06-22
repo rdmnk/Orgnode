@@ -1,9 +1,8 @@
-# Copyright (c) 2010 Charles Cave
-# 
-#  Permission  is  hereby  granted,  free  of charge,  to  any  person
-#  obtaining  a copy  of  this software  and associated  documentation
-#  files   (the  "Software"),   to  deal   in  the   Software  without
-#  restriction, including without limitation  the rights to use, copy,
+#  MIT License
+#  Permission is hereby granted, free of charge, to any person
+#  obtaining a copy of this software and associated documentation files
+#  (the "Software"), to deal in the Software without restriction,
+#  including without limitation the rights to use, copycopy,
 #  modify, merge, publish,  distribute, sublicense, and/or sell copies
 #  of  the Software, and  to permit  persons to  whom the  Software is
 #  furnished to do so, subject to the following conditions:
@@ -26,6 +25,8 @@
 #   Added support for all tags, TODO priority and checking existence of a tag
 # More information at
 #    http://members.optusnet.com.au/~charles57/GTD
+# Jule 2017, by Roman.Dmnk
+#   Added 'maketree' function.
 
 """
 The Orgnode module consists of the Orgnode class for representing a
