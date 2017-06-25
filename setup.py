@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='Orgnode',
     packages=['Orgnode'],
-    version='0.1.1',
+    version='0.1.2',
     description='The org-mode parser for python',
     author='Charles Cave',
     author_email='charlesweb@optusnet.com.au',

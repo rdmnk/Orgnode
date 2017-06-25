@@ -45,7 +45,7 @@ def toJSON(nodelist):
                      sort_keys=True, indent=4)
 
 
-def maketree(filename):
+def maketree(filename, filecontent):
    """
    Read an org-mode file and return a tree of Orgnode objects
    created from this file.
@@ -53,12 +53,12 @@ def maketree(filename):
    ctr = 0
    
 
-   try:
-      f = open(filename, 'r')
-   except IOError:
-      print "Unable to open file [%s] " % filename
-      print "Program terminating."
-      sys.exit(1)
+   #try:
+   #   f = open(filename, 'r')
+   #except IOError:
+   #   print "Unable to open file [%s] " % filename
+   #   print "Program terminating."
+   #   sys.exit(1)
 
    todos         = dict()  # populated from #+SEQ_TODO line
    todos['TODO'] = ''   # default values
@@ -82,7 +82,8 @@ def maketree(filename):
    thisNode = Orgnode('', filebase, "", "", "", None, None)
    nodetree.append(thisNode)
    
-   for line in f:
+   lines = filecontent.split('\n')
+   for line in lines:
        ctr += 1     
        hdng = re.search('^(\*+)\s(.*?)\s*$', line)
        if hdng:
